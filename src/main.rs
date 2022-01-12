@@ -320,21 +320,41 @@ fn main() {
             i, guess
         );
         let mut hints = Hints::default();
+        let mut guesses = vec![];
         for (i, c) in guess.chars().enumerate() {
-            print!("{}: ", c);
-            let _ = stdout().flush();
-            let mut input = String::new();
-            stdin().read_line(&mut input).unwrap();
-            match input.chars().next() {
-                Some(user_char) => match user_char.to_ascii_lowercase() {
-                    'g' => hints.add_used_at(c, i),
-                    'y' => hints.add_not_used_at(c, i),
-                    _ => hints.add_unused(c),
-                },
-                None => hints.add_unused(c),
-            };
+            let mut user_input = None;
+            while let None = user_input {
+                print!("{}: ", c);
+                let _ = stdout().flush();
+                let mut input = String::new();
+                stdin().read_line(&mut input).unwrap();
+                match input.chars().next() {
+                    Some(user_char) => match user_char.to_ascii_lowercase() {
+                        'g' => {
+                            hints.add_used_at(c, i);
+                            user_input = Some('g');
+                        }
+                        'y' => {
+                            hints.add_not_used_at(c, i);
+                            user_input = Some('y');
+                        }
+                        '\n' => {
+                            hints.add_unused(c);
+                            user_input = Some('b');
+                        }
+                        _ => {}
+                    },
+                    None => {
+                        hints.add_unused(c);
+                        user_input = Some('b');
+                    }
+                };
+                guesses.push(user_input.unwrap());
+            }
+        }
+        if guesses.iter().all(|c| *c == 'g') {
+            break;
         }
         guesser.update(hints);
-        println!("{:?}", guesser.hints);
     }
 }
