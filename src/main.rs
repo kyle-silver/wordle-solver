@@ -1,5 +1,5 @@
 use std::collections::{hash_map::Entry, HashMap, HashSet};
-use std::io::{stdin, stdout, Read, Write};
+use std::io::{stdin, stdout, Write};
 
 const CORPUS: &str = include_str!("res/words.txt");
 
