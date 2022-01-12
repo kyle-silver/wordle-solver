@@ -213,11 +213,28 @@ impl Hints {
                             return false;
                         }
                     }
-                    Hint::In(positions) => {
-                        if !positions.contains(&i) {
+                    _ => {}
+                }
+            }
+        }
+        let chars: Vec<_> = candidate.chars().collect();
+        let hints: Vec<_> = self
+            .0
+            .iter()
+            .filter_map(|(c, hint)| match hint {
+                Hint::In(v) => Some((*c, v)),
+                _ => None,
+            })
+            .collect();
+        for (c, positions) in hints {
+            for position in positions {
+                match chars.get(*position) {
+                    Some(found) => {
+                        if *found != c {
                             return false;
                         }
                     }
+                    None => todo!(),
                 }
             }
         }
@@ -319,8 +336,8 @@ fn main() {
                 },
                 None => hints.add_unused(c),
             };
-            // println!();
         }
         guesser.update(hints);
+        println!("{:?}", guesser.hints);
     }
 }
