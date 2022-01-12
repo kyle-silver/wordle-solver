@@ -1,4 +1,5 @@
 use std::collections::{hash_map::Entry, HashMap, HashSet};
+use std::io::{stdin, stdout, Read, Write};
 
 const CORPUS: &str = include_str!("res/words.txt");
 
@@ -174,6 +175,34 @@ enum Hint {
 struct Hints(HashMap<char, Hint>);
 
 impl Hints {
+    fn add_unused(&mut self, c: char) {
+        self.0.insert(c, Hint::Unused);
+    }
+
+    fn add_used_at(&mut self, c: char, index: usize) {
+        match self.0.entry(c) {
+            Entry::Occupied(mut occupied) => match occupied.get_mut() {
+                Hint::In(positions) => positions.push(index),
+                _ => {}
+            },
+            Entry::Vacant(vacant) => {
+                vacant.insert(Hint::In(vec![index]));
+            }
+        }
+    }
+
+    fn add_not_used_at(&mut self, c: char, index: usize) {
+        match self.0.entry(c) {
+            Entry::Occupied(mut occupied) => match occupied.get_mut() {
+                Hint::NotIn(positions) => positions.push(index),
+                _ => {}
+            },
+            Entry::Vacant(vacant) => {
+                vacant.insert(Hint::NotIn(vec![index]));
+            }
+        }
+    }
+
     fn valid(&self, candidate: &str) -> bool {
         for (i, c) in candidate.chars().enumerate() {
             if let Some(hint) = self.0.get(&c) {
@@ -270,72 +299,28 @@ impl<'a> Guesser<'a> {
 
 fn main() {
     let mut guesser = Guesser::new(CORPUS.lines());
-    println!("Guess #1: {}", guesser.suggest());
-    let hints = [
-        ('b', Hint::Unused),
-        ('a', Hint::In(vec![1])),
-        ('r', Hint::NotIn(vec![2])),
-        ('e', Hint::Unused),
-        ('s', Hint::Unused),
-    ]
-    .into_iter()
-    .collect();
-    let hints = Hints(hints);
-    guesser.update(hints);
-    println!("Guess #2: {}", guesser.suggest());
-    let hints = [
-        ('c', Hint::Unused),
-        ('a', Hint::In(vec![1])),
-        ('n', Hint::Unused),
-        ('t', Hint::Unused),
-        ('y', Hint::Unused),
-    ]
-    .into_iter()
-    .collect();
-    let hints = Hints(hints);
-    guesser.update(hints);
-    println!("Guess #3: {}", guesser.suggest());
-    let hints = [
-        ('h', Hint::Unused),
-        ('a', Hint::In(vec![1])),
-        ('l', Hint::Unused),
-        ('i', Hint::Unused),
-        ('d', Hint::Unused),
-    ]
-    .into_iter()
-    .collect();
-    let hints = Hints(hints);
-    guesser.update(hints);
-    println!("Guess #4: {}", guesser.suggest());
-    let hints = [
-        ('m', Hint::Unused),
-        ('a', Hint::In(vec![1])),
-        ('u', Hint::Unused),
-        ('r', Hint::NotIn(vec![3])),
-        ('o', Hint::NotIn(vec![4])),
-    ]
-    .into_iter()
-    .collect();
-    let hints = Hints(hints);
-    guesser.update(hints);
-    println!("Guess #5: {}", guesser.suggest());
-    let hints = [
-        ('k', Hint::Unused),
-        ('a', Hint::In(vec![1])),
-        ('p', Hint::Unused),
-        ('o', Hint::In(vec![3])),
-        ('r', Hint::In(vec![4])),
-    ]
-    .into_iter()
-    .collect();
-    let hints = Hints(hints);
-    guesser.update(hints);
-    println!("Guess #6: {}", guesser.suggest());
-}
-
-#[test]
-fn test_score() {
-    println!("{}", score("angst"));
-    println!("{}", score("zzzzz"));
-    println!("{}", score("aaaaa"));
+    for i in 1..=6 {
+        let guess = guesser.suggest();
+        println!(
+            "Guess #{}: {} ('g' = green / 'y' = yellow / 'b' = black)",
+            i, guess
+        );
+        let mut hints = Hints::default();
+        for (i, c) in guess.chars().enumerate() {
+            print!("{}: ", c);
+            let _ = stdout().flush();
+            let mut input = String::new();
+            stdin().read_line(&mut input).unwrap();
+            match input.chars().next() {
+                Some(user_char) => match user_char.to_ascii_lowercase() {
+                    'g' => hints.add_used_at(c, i),
+                    'y' => hints.add_not_used_at(c, i),
+                    _ => hints.add_unused(c),
+                },
+                None => hints.add_unused(c),
+            };
+            // println!();
+        }
+        guesser.update(hints);
+    }
 }
