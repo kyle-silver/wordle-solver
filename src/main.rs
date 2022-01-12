@@ -227,15 +227,12 @@ impl Hints {
             })
             .collect();
         for (c, positions) in hints {
-            for position in positions {
-                match chars.get(*position) {
-                    Some(found) => {
-                        if *found != c {
-                            return false;
-                        }
-                    }
-                    None => todo!(),
-                }
+            let invalid = positions
+                .iter()
+                .filter_map(|i| chars.get(*i))
+                .any(|found| *found != c);
+            if invalid {
+                return false;
             }
         }
         return true;
