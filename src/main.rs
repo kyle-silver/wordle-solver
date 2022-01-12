@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{hash_map::Entry, HashMap, HashSet};
 
 const CORPUS: &str = include_str!("res/words.txt");
 
@@ -194,6 +194,39 @@ impl Hints {
         }
         return true;
     }
+
+    fn merge(&mut self, others: Hints) {
+        for (c, hint) in others.0 {
+            match self.0.entry(c) {
+                Entry::Occupied(mut occupied) => match occupied.get_mut() {
+                    Hint::NotIn(positions) => match hint {
+                        Hint::NotIn(other_positions) => {
+                            // types match, combine them
+                            positions.extend(other_positions.iter());
+                        }
+                        Hint::In(positions) => {
+                            // the "in" hint takes precedence over "not in"
+                            *occupied.get_mut() = Hint::In(positions);
+                        }
+                        Hint::Unused => unreachable!("cannot be both used and unused"),
+                    },
+                    Hint::In(positions) => match hint {
+                        Hint::In(other_positions) => {
+                            // types match, combine them
+                            positions.extend(other_positions.iter());
+                        }
+                        Hint::NotIn(_) => { /* I'm not sure what to do with this case */ }
+                        Hint::Unused => unreachable!("cannot be both used and unused"),
+                    },
+                    Hint::Unused => {}
+                },
+                Entry::Vacant(vacant_entry) => {
+                    // the incoming hint is new information
+                    vacant_entry.insert(hint);
+                }
+            }
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -220,7 +253,7 @@ impl<'a> Guesser<'a> {
 
     fn update(&mut self, hints: Hints) {
         // consume all of the new hints
-        self.hints.0.extend(hints.0.into_iter());
+        self.hints.merge(hints);
         let invalid: HashSet<&'a str> = self
             .candidates
             .iter()
