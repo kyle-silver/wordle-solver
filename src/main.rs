@@ -315,10 +315,14 @@ fn main() {
     let mut guesser = Guesser::new(CORPUS.lines());
     for i in 1..=6 {
         let guess = guesser.suggest();
-        println!(
-            "Guess #{}: {} ('g' = green / 'y' = yellow / 'b' = black)",
-            i, guess
-        );
+        if i < 6 {
+            println!(
+                "Guess #{}: {} ('g' = green / 'y' = yellow / 'b' = black)",
+                i, guess
+            );
+        } else {
+            println!("Guess #{}: {}", i, guess);
+        }
         let mut hints = Hints::default();
         let mut guesses = vec![];
         for (i, c) in guess.chars().enumerate() {
